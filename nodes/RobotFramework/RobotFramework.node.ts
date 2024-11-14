@@ -134,6 +134,9 @@ Cleanup Test
 				terminalOutput = terminalOutput.substring(0, lastOutputIndex).trim();
 			}
 
+			// Split terminalOutput into lines and preserve spacing by encoding spaces
+			const formattedTerminalOutput = terminalOutput.split('\n').map(line => line.replace(/ /g, '\u00A0'));
+
 			// Define paths for optional output files
 			const outputFiles = [
 				{ name: 'output.xml', path: path.join(logPath, 'output.xml'), include: includeOutputXml },
@@ -153,9 +156,9 @@ Cleanup Test
 				}
 			}
 
-			// Create output item with terminal output
+			// Create output item with formatted terminal output
 			const outputItem: INodeExecutionData = {
-				json: { terminalOutput },
+				json: { terminalOutput: formattedTerminalOutput },
 				binary: attachments,
 			};
 
