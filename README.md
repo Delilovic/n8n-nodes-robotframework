@@ -3,6 +3,8 @@
 
 This is an n8n community node that lets you execute [Robot Framework](https://robotframework.org/) scripts in your n8n workflows, enabling test automation, web automation, and task automation directly within n8n.
 
+![Image 1](screenshots/image_1.png)
+
 [Robot Framework](https://robotframework.org/) is an open-source automation framework used for acceptance testing, robotic process automation (RPA), and more. This node provides the flexibility to execute .robot scripts and utilize Robot Framework libraries and keywords for advanced automation scenarios.
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) workflow automation platform.
@@ -32,21 +34,13 @@ This node is compatible with n8n versions that support custom nodes. It requires
 This node is suitable for advanced users familiar with Robot Framework syntax and its capabilities. Define your Robot Framework script directly within the node’s configuration, including sections like Settings, Variables, Test Cases, and Keywords.
 
 **Example Usage**:
-```robot
-*** Settings ***
-Library    BuiltIn
-Suite Setup    Log    Starting test suite
-Suite Teardown    Log    Test suite complete
 
-*** Variables ***
-${GREETING}    Hello, Robot Framework!
+![Image 2](screenshots/image_2.png)
 
-*** Test Cases ***
-Example Test Case
-    Log    ${GREETING}
-```
 
-This node also provides options to include output files (`output.xml`, `log.html`, and `report.html`) for deeper insights into test results.
+This node also provides options to include output files (`output.xml`, `log.html`, and `report.html`) for deeper insights into test results:
+
+![Image 3](screenshots/image_3.png)
 
 ## Resources
 
