@@ -56,3 +56,4 @@ This node also provides options to include output files (`output.xml`, `log.html
 ## Version history
 
 - **0.0.1** - Initial release with support for script execution and output file generation.
+- **0.0.2** - Enhanced terminal output readability for Robot Framework test results, preserving original spacing for better clarity in n8n json view.
