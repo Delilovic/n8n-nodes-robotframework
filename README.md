@@ -1,5 +1,6 @@
 
 # n8n-nodes-robotframework
+[![npm version](https://badge.fury.io/js/n8n-nodes-robotframework.svg)](https://www.npmjs.com/package/n8n-nodes-robotframework)
 
 This is an n8n community node that lets you execute [Robot Framework](https://robotframework.org/) scripts in your n8n workflows, enabling test automation, web automation, and task automation directly within n8n.
 
