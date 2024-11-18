@@ -51,3 +51,8 @@ This node also provides options to include output files (`output.xml`, `log.html
 
 - **0.0.1** - Initial release with support for script execution and output file generation.
 - **0.0.2** - Enhanced terminal output readability for Robot Framework test results, preserving original spacing for better clarity in n8n json view.
+- **0.0.3** - Refactored error handling and variable output:
+  - Replaced console output with variable-based results for better clarity.
+  - Improved error handling to display stderr messages during failures.
+  - Centralized variable logging for improved maintainability and debugging.
+  - Optimized code structure for test execution and error management.
