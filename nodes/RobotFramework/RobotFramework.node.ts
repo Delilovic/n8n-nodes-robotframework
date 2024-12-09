@@ -9,6 +9,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 
 const execAsync = promisify(exec);
 
@@ -60,92 +61,188 @@ export class RobotFramework implements INodeType {
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
+		const stripOutputPart = (terminalOutput: string): string => {
+			const lastOutputIndex = terminalOutput.lastIndexOf('Output:');
+			if (lastOutputIndex !== -1) {
+				return terminalOutput.substring(0, lastOutputIndex).trim();
+			}
+			return terminalOutput;
+		};
+
+		const addAttachments = (files: { name: string; path: string; include: boolean }[], attachments: { [key: string]: any }) => {
+			files.forEach((file) => {
+				if (file.include && fs.existsSync(file.path)) {
+					attachments[file.name] = {
+						data: fs.readFileSync(file.path).toString('base64'),
+						mimeType: 'application/octet-stream',
+						fileName: file.name,
+					};
+				}
+			});
+		};
+
+		const extractVariables = (outputJson: any): Record<string, string> => {
+			const exclusionList = [
+				"${/}", "${:}", "${\\n}", "${DEBUG_FILE}", "${EXECDIR}", "${False}",
+				"${LOG_FILE}", "${LOG_LEVEL}", "${None}", "${null}", "&{OPTIONS}",
+				"${OUTPUT_DIR}", "${OUTPUT_FILE}", "${PREV_TEST_MESSAGE}", "${PREV_TEST_NAME}",
+				"${PREV_TEST_STATUS}", "${REPORT_FILE}", "${SPACE}",
+				"${SUITE_DOCUMENTATION}", "&{SUITE_METADATA}", "${SUITE_NAME}", "${SUITE_SOURCE}",
+				"${TEMPDIR}", "${True}"
+			];
+
+			const variables: Record<string, string> = {};
+
+			function escapeRegExp(string: string): string {
+				return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			}
+
+			// Recursive function to process nested bodies
+			function processBody(body: any[]) {
+				for (const step of body) {
+					if (step.assign && step.body) {
+						for (const assignedVar of step.assign) {
+							const message = step.body.find(
+								(entry: any) =>
+									entry.type === "MESSAGE" &&
+									new RegExp(`^${escapeRegExp(assignedVar)}\\s*=`).test(entry.message)
+							);
+							if (message) {
+								const value = message.message.split(" = ")[1].trim();
+								variables[assignedVar] = value;
+							}
+						}
+					}
+
+					// Recursively process nested bodies
+					if (step.body) {
+						processBody(step.body);
+					}
+				}
+			}
+
+			// Process the tests
+			if (outputJson.tests) {
+				for (const test of outputJson.tests) {
+					if (test.body) {
+						processBody(test.body);
+					}
+				}
+			}
+
+			// Process the setup section
+			if (outputJson.setup && outputJson.setup.name === "Log Variables") {
+				const logMessages = outputJson.setup.body.filter((entry: any) => entry.type === "MESSAGE");
+				for (const message of logMessages) {
+					const match = message.message.match(/^\$\{.*?\}\s*=\s*(.*)$/);
+					if (match) {
+						const variableName = message.message.split(" = ")[0].trim();
+						const variableValue = match[1];
+						if (!exclusionList.includes(variableName)) {
+							variables[variableName] = variableValue;
+						}
+					}
+				}
+			}
+
+			return variables;
+		};
+
+		const transformVariables = (variables: { [key: string]: any }) => {
+			const transformed: { [key: string]: string } = {};
+			for (const key in variables) {
+				const cleanKey = key.replace(/^\$\{|\}$/g, '');
+				transformed[cleanKey] = variables[key];
+			}
+			return transformed;
+		};
+
+		const prepareExecutionPaths = (): { logPath: string; robotFilePath: string } => {
+			const homeDir = os.homedir();
+			const executionId = this.getExecutionId();
+			const nodeName = this.getNode().name.replace(/\s+/g, '_');
+			const logPath = path.join(homeDir, 'n8n_robot_logs', executionId, nodeName);
+			if (!fs.existsSync(logPath)) {
+				fs.mkdirSync(logPath, { recursive: true });
+			}
+			const robotFilePath = path.join(logPath, 'test.robot');
+			return { logPath, robotFilePath };
+		};
+
+		const runRobotTests = async (logPath: string, robotFilePath: string) => {
+			let terminalOutput = '';
+			let errorOccurred = false;
+			try {
+				const { stdout } = await execAsync(`robot -d ${logPath} --output output.xml ${robotFilePath}`);
+				terminalOutput = stdout;
+			} catch (error) {
+				terminalOutput = (error as any).stdout || (error as any).stderr || 'Execution error with no output';
+				errorOccurred = true;
+			}
+			terminalOutput = stripOutputPart(terminalOutput);
+			return { terminalOutput, errorOccurred };
+		};
+
+		const generateOutputJson = async (logPath: string, outputJsonPath: string) => {
+			const outputXmlPath = path.join(logPath, 'output.xml');
+			try {
+				await execAsync(`rebot --log NONE --report NONE --output ${outputJsonPath} ${outputXmlPath}`);
+			} catch (error: any) {
+				if (!fs.existsSync(outputJsonPath)) {
+					throw new Error('Rebot failed and output.json is missing.');
+				}
+			}
+		};
+
+		const extractVariablesFromOutput = (outputJsonPath: string) => {
+			const outputJson = JSON.parse(fs.readFileSync(outputJsonPath, 'utf8'));
+			return extractVariables(outputJson);
+		};
+
+		const collectAttachments = (logPath: string, options: { outputXml: boolean; logHtml: boolean; reportHtml: boolean }) => {
+			const outputFiles = [
+				{ name: 'output.xml', path: path.join(logPath, 'output.xml'), include: options.outputXml },
+				{ name: 'log.html', path: path.join(logPath, 'log.html'), include: options.logHtml },
+				{ name: 'report.html', path: path.join(logPath, 'report.html'), include: options.reportHtml },
+			];
+			const attachments: { [key: string]: any } = {};
+			addAttachments(outputFiles, attachments);
+			return attachments;
+		};
+
 		const items = this.getInputData();
 		const results: INodeExecutionData[] = [];
 
 		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
-			// Retrieve input parameters
-			const robotScript = this.getNodeParameter('robotScript', itemIndex, '') as string;
+			const robotScript = `*** Settings ***\nSuite Setup    Log Variables\n${this.getNodeParameter('robotScript', itemIndex, '') as string}`;
 			const includeOutputXml = this.getNodeParameter('includeOutputXml', itemIndex, false) as boolean;
 			const includeLogHtml = this.getNodeParameter('includeLogHtml', itemIndex, false) as boolean;
 			const includeReportHtml = this.getNodeParameter('includeReportHtml', itemIndex, false) as boolean;
 
-			// Setup Paths and Directories
-			const executionId = this.getExecutionId();
-			const nodeName = this.getNode().name.replace(/\s+/g, '_');
-			const logPath = path.join(process.cwd(), 'output', executionId, nodeName);
-			ensureDirectoryExists(logPath);
-
-			// Write Robot Framework script to a file
-			const robotFilePath = path.join(logPath, 'test.robot');
+			const { logPath, robotFilePath } = prepareExecutionPaths();
 			fs.writeFileSync(robotFilePath, robotScript);
 
-			let terminalOutput = '';
-			let errorOccurred = false;
+			const { terminalOutput, errorOccurred } = await runRobotTests(logPath, robotFilePath);
+			const outputJsonPath = path.join(logPath, 'output.json');
+			await generateOutputJson(logPath, outputJsonPath);
+			const variables = extractVariablesFromOutput(outputJsonPath);
+			const transformedVariables = transformVariables(variables);
 
-			try {
-				// Execute Robot Framework
-				const { stdout, stderr } = await execAsync(`robot -d ${logPath} --output output.xml ${robotFilePath}`);
-				terminalOutput = stdout || stderr;
-				if (stderr) {
-					errorOccurred = true;
-				}
-			} catch (error) {
-				// Capture error details
-				terminalOutput = (error as any).stdout || (error as any).stderr || 'Execution error with no output';
-				errorOccurred = true;
-			}
+			const attachments = collectAttachments(logPath, {
+				outputXml: includeOutputXml,
+				logHtml: includeLogHtml,
+				reportHtml: includeReportHtml,
+			});
 
-			// Cut out the "Output:" part of the terminalOutput
-			terminalOutput = stripOutputPart(terminalOutput);
-
-			// Initialize variables
-			let variables: { [key: string]: any } = {};
-
-			// Process success case: Extract variables
-			if (!errorOccurred) {
-				const outputJsonPath = path.join(logPath, 'output.json');
-				try {
-					await execAsync(`rebot --log NONE --report NONE --output ${outputJsonPath} ${path.join(logPath, 'output.xml')}`);
-					if (fs.existsSync(outputJsonPath)) {
-						const outputJson = JSON.parse(fs.readFileSync(outputJsonPath, 'utf8'));
-						variables = extractVariablesFromOutputJson(outputJson);
-					}
-				} catch (error) {
-					this.logger.error(`Failed to generate JSON output using rebot: ${(error as any).message}`);
-				}
-			}
-
-			// Process optional file attachments
-			const outputFiles = [
-				{ name: 'output.xml', path: path.join(logPath, 'output.xml'), include: includeOutputXml },
-				{ name: 'log.html', path: path.join(logPath, 'log.html'), include: includeLogHtml },
-				{ name: 'report.html', path: path.join(logPath, 'report.html'), include: includeReportHtml },
-			];
-			const attachments: { [key: string]: any } = {};
-			addAttachments(outputFiles, attachments);
-
-			// Transform variables to remove ${} and directly return key-value pairs
-			const transformedVariables: { [key: string]: string } = {};
-			for (const key in variables) {
-				const cleanKey = key.replace(/^\$\{|\}$/g, ''); // Remove ${ and }
-				transformedVariables[cleanKey] = variables[key];
-			}
-
-			// Construct Result Item
 			const outputItem: INodeExecutionData = {
 				json: errorOccurred
-					? { error: terminalOutput } // Keep error details if execution failed
-					: Object.keys(transformedVariables).length > 0
-					? transformedVariables // Directly return cleaned variables on success
-					: {}, // Return empty object if no variables
-				binary: errorOccurred ? undefined : attachments, // Attach files only if no error occurred
+					? { error: { terminal_output: terminalOutput, ...transformedVariables } }
+					: { terminal_output: terminalOutput, ...transformedVariables },
+				binary: attachments,
 			};
 
-			if (errorOccurred) {
-				if (!this.continueOnFail()) {
-					throw new NodeOperationError(this.getNode(), terminalOutput);
-				}
+			if (errorOccurred && !this.continueOnFail()) {
+				throw new NodeOperationError(this.getNode(), outputItem.json);
 			}
 
 			results.push(outputItem);
@@ -153,68 +250,4 @@ export class RobotFramework implements INodeType {
 
 		return [results];
 	}
-}
-
-// Helper Functions
-
-function ensureDirectoryExists(directory: string) {
-	if (!fs.existsSync(directory)) {
-		fs.mkdirSync(directory, { recursive: true });
-	}
-}
-
-function stripOutputPart(terminalOutput: string): string {
-	const lastOutputIndex = terminalOutput.lastIndexOf('Output:');
-	if (lastOutputIndex !== -1) {
-		return terminalOutput.substring(0, lastOutputIndex).trim();
-	}
-	return terminalOutput;
-}
-
-function addAttachments(files: { name: string; path: string; include: boolean }[], attachments: { [key: string]: any }) {
-	files.forEach((file) => {
-		if (file.include && fs.existsSync(file.path)) {
-			attachments[file.name] = {
-				data: fs.readFileSync(file.path).toString('base64'),
-				mimeType: 'application/octet-stream',
-				fileName: file.name,
-			};
-		}
-	});
-}
-
-function extractVariablesFromOutputJson(outputJson: any): { [key: string]: any } {
-	const variables: { [key: string]: any } = {};
-
-	const traverseBody = (body: any[]) => {
-		body.forEach((item) => {
-			if (item.name && item.assign && item.assign.length > 0) {
-				item.assign.forEach((varName: string) => {
-					item.body?.forEach((msg: any) => {
-						if (msg.type === 'MESSAGE' && msg.message) {
-							const match = msg.message.match(new RegExp(`^${escapeRegExp(varName)}\\s*=\\s*(.*)$`));
-							if (match) {
-								variables[varName] = match[1].trim();
-							}
-						}
-					});
-				});
-			}
-			if (item.body) {
-				traverseBody(item.body);
-			}
-		});
-	};
-
-	outputJson.tests?.forEach((test: any) => {
-		if (test.body) {
-			traverseBody(test.body);
-		}
-	});
-
-	return variables;
-}
-
-function escapeRegExp(string: string): string {
-	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
