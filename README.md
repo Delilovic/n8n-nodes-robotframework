@@ -56,3 +56,7 @@ This node also provides options to include output files (`output.xml`, `log.html
   - Improved error handling to display stderr messages during failures.
   - Centralized variable logging for improved maintainability and debugging.
   - Optimized code structure for test execution and error management.
+- **0.0.4** - Refactored code for modularity and readability:
+  - Extracted helper functions: prepareExecutionPaths, runRobotTests, generateOutputJson, extractVariablesFromOutput, and collectAttachments.
+  - Simplified handling of terminal output and error reporting.
+  - Improved variable extraction logic.
