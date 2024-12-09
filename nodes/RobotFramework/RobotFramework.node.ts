@@ -189,7 +189,7 @@ export class RobotFramework implements INodeType {
 				await execAsync(`rebot --log NONE --report NONE --output ${outputJsonPath} ${outputXmlPath}`);
 			} catch (error: any) {
 				if (!fs.existsSync(outputJsonPath)) {
-					throw new Error('Rebot failed and output.json is missing.');
+					throw new NodeOperationError('Rebot failed and output.json is missing.');
 				}
 			}
 		};
