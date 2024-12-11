@@ -57,6 +57,14 @@ export class RobotFramework implements INodeType {
 				default: false,
 				description: 'Whether to include the report.html file as an attachment',
 			},
+			{
+				displayName: 'Include Other Input Fields',
+				name: 'includeOtherFields',
+				type: 'boolean',
+				default: false,
+				description:
+					"Whether to pass to the output all the input fields (along with variables from 'Robot Framework' node)",
+			},
 		],
 	};
 
@@ -218,6 +226,7 @@ export class RobotFramework implements INodeType {
 			const includeOutputXml = this.getNodeParameter('includeOutputXml', itemIndex, false) as boolean;
 			const includeLogHtml = this.getNodeParameter('includeLogHtml', itemIndex, false) as boolean;
 			const includeReportHtml = this.getNodeParameter('includeReportHtml', itemIndex, false) as boolean;
+			const includeOtherFields = this.getNodeParameter('includeOtherFields', itemIndex, false) as boolean;
 
 			const { logPath, robotFilePath } = prepareExecutionPaths();
 			fs.writeFileSync(robotFilePath, robotScript);
@@ -234,12 +243,19 @@ export class RobotFramework implements INodeType {
 				reportHtml: includeReportHtml,
 			});
 
-			const outputItem: INodeExecutionData = {
+			let outputItem: INodeExecutionData = {
 				json: errorOccurred
 					? { error: { terminal_output: terminalOutput, ...transformedVariables } }
 					: { terminal_output: terminalOutput, ...transformedVariables },
 				binary: attachments,
 			};
+
+			if (includeOtherFields) {
+				outputItem.json = {
+					...items[itemIndex].json,
+					...outputItem.json,
+				};
+			}
 
 			if (errorOccurred && !this.continueOnFail()) {
 				throw new NodeOperationError(this.getNode(), outputItem.json);
