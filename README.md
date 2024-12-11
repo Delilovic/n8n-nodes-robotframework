@@ -60,3 +60,7 @@ This node also provides options to include output files (`output.xml`, `log.html
   - Extracted helper functions: prepareExecutionPaths, runRobotTests, generateOutputJson, extractVariablesFromOutput, and collectAttachments.
   - Simplified handling of terminal output and error reporting.
   - Improved variable extraction logic.
+- **0.0.5**
+  - Fixed error handling
+  - Add default Robot Framework structure to node
+  - Refactoring

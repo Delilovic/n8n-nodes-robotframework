@@ -32,9 +32,9 @@ export class RobotFramework implements INodeType {
 				displayName: 'Robot Framework Script',
 				name: 'robotScript',
 				type: 'string',
-				default: '',
+				default: '*** Settings ***\n\n*** Variables ***\n\n*** Tasks ***\n\n*** Keywords ***',
 				description:
-					'Enter the full Robot Framework script here, including Settings, Variables, Test Cases, and Keywords sections',
+					'Enter the full Robot Framework script here, including Settings, Variables, Tasks/Test Cases, and Keywords sections',
 			},
 			{
 				displayName: 'Include Output XML',
@@ -173,7 +173,7 @@ export class RobotFramework implements INodeType {
 			if (!fs.existsSync(logPath)) {
 				fs.mkdirSync(logPath, { recursive: true });
 			}
-			const robotFilePath = path.join(logPath, 'test.robot');
+			const robotFilePath = path.join(logPath, 'script.robot');
 			return { logPath, robotFilePath };
 		};
 
@@ -191,8 +191,7 @@ export class RobotFramework implements INodeType {
 			return { terminalOutput, errorOccurred };
 		};
 
-		const generateOutputJson = async (logPath: string, outputJsonPath: string) => {
-			const outputXmlPath = path.join(logPath, 'output.xml');
+		const generateOutputJson = async (outputXmlPath: string, outputJsonPath: string) => {
 			try {
 				await execAsync(`rebot --log NONE --report NONE --output ${outputJsonPath} ${outputXmlPath}`);
 			} catch (error: any) {
@@ -222,7 +221,7 @@ export class RobotFramework implements INodeType {
 		const results: INodeExecutionData[] = [];
 
 		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
-			const robotScript = `*** Settings ***\nSuite Setup    Log Variables\n${this.getNodeParameter('robotScript', itemIndex, '') as string}`;
+			const robotScript = `*** Settings ***\nSuite Setup    Log Variables\n\n${this.getNodeParameter('robotScript', itemIndex, '') as string}`;
 			const includeOutputXml = this.getNodeParameter('includeOutputXml', itemIndex, false) as boolean;
 			const includeLogHtml = this.getNodeParameter('includeLogHtml', itemIndex, false) as boolean;
 			const includeReportHtml = this.getNodeParameter('includeReportHtml', itemIndex, false) as boolean;
@@ -232,8 +231,12 @@ export class RobotFramework implements INodeType {
 			fs.writeFileSync(robotFilePath, robotScript);
 
 			const { terminalOutput, errorOccurred } = await runRobotTests(logPath, robotFilePath);
+		    const outputXmlPath = path.join(logPath, 'output.xml');
+			if (!fs.existsSync(outputXmlPath)) {
+				throw new NodeOperationError(this.getNode(), terminalOutput);
+			}
 			const outputJsonPath = path.join(logPath, 'output.json');
-			await generateOutputJson(logPath, outputJsonPath);
+			await generateOutputJson(outputXmlPath, outputJsonPath);
 			const variables = extractVariablesFromOutput(outputJsonPath);
 			const transformedVariables = transformVariables(variables);
 
@@ -258,7 +261,7 @@ export class RobotFramework implements INodeType {
 			}
 
 			if (errorOccurred && !this.continueOnFail()) {
-				throw new NodeOperationError(this.getNode(), outputItem.json);
+				throw new NodeOperationError(this.getNode(), terminalOutput);
 			}
 
 			results.push(outputItem);
