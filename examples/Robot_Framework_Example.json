@@ -1,0 +1,127 @@
+{
+  "name": "Robot Framework Example",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "376d5b6f-420d-4670-9fb0-d32a21bc446d",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "robotScript": "*** Settings ***\nLibrary    Browser\n\n*** Variables ***\n${URL}             https://practice.expandtesting.com/login\n${USERNAME}        practice\n${PASSWORD}        SuperSecretPassword!\n\n*** Tasks ***\nLogin\n    New Browser\n    New Context\n    New Page    ${URL}\n    Wait For Elements State    css=div.fc-consent-root    hidden    timeout=5s\n    Type Text    id=username    ${USERNAME}\n    Type Secret    id=password    $PASSWORD\n    Take Screenshot    EMBED    fullPage=True\n    Click    xpath=//button[@type=\"submit\" and contains(text(), \"Login\")]\n    ${current_url} =    Get Url\n    ${state_file} =    Save Storage State\n    Close Browser",
+        "includeLogHtml": true
+      },
+      "type": "n8n-nodes-robotframework.robotFramework",
+      "typeVersion": 1,
+      "position": [
+        220,
+        0
+      ],
+      "id": "9295bb64-47d1-48be-b397-1b3f49d2836c",
+      "name": "Login"
+    },
+    {
+      "parameters": {
+        "robotScript": "=*** Settings ***\nLibrary    Browser\n\n*** Variables ***\n${URL}    {{ $json.current_url }}        \n\n*** Tasks ***\nValidate Login\n    New Browser\n    New context    storageState={{ $json.state_file }}\n    New Page    ${URL}\n    Get Text    xpath=//h1[text()=\"Secure Area page for Automation Testing Practice\"]\n    Take Screenshot    EMBED    fullPage=True   \n    Close Browser",
+        "includeLogHtml": true,
+        "includeOtherFields": true
+      },
+      "type": "n8n-nodes-robotframework.robotFramework",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ],
+      "id": "73460ec3-74d3-4252-b3c9-c844969e9254",
+      "name": "Validate Login"
+    },
+    {
+      "parameters": {
+        "chatId": "-1002192658598",
+        "text": "={{ $json.URL }}\n\nLogin was successful!",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false,
+          "disable_web_page_preview": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "ff7a47aa-ad62-4d47-8b67-8e4e01d13b71",
+      "name": "Post",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        680,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "telegramApi": {
+          "id": "2t6jk5nmdJs930T0",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login": {
+      "main": [
+        [
+          {
+            "node": "Validate Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Login": {
+      "main": [
+        [
+          {
+            "node": "Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e9a088ea-ca6b-433a-b905-8a54666bb9ac",
+  "meta": {
+    "instanceId": "a1c3fb268ebdab1bf47bcbd1467543a133eb02499a51fc502defa2c8957447ba"
+  },
+  "id": "Nuo3lvIklRUH0dyU",
+  "tags": [
+    {
+      "createdAt": "2024-12-12T22:21:03.178Z",
+      "updatedAt": "2024-12-12T22:21:03.178Z",
+      "id": "gfwMcOmJ6mSNn5cV",
+      "name": "Misc"
+    }
+  ]
+}
