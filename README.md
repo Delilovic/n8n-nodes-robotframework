@@ -191,6 +191,8 @@ You can easily import this example into your n8n instance by following these ste
 
 This will load the entire example workflow into your instance, allowing you to explore and customize it as needed.  
 
+Note: If you prefer not to create a Telegram API token or account, you can simply remove the Telegram node. Everything else will function as expected.
+
 ## Version history
 
 - **0.0.1** - Initial release with support for script execution and output file generation.
