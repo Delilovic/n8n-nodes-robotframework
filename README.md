@@ -103,6 +103,8 @@ After setting up `n8n` (via either Quick Start or Detailed Instructions), follow
 
 The custom Docker image, **`n8n_robotframework`**, is regularly updated alongside major versions of `n8n` (e.g., 1.72.0, 1.73.0, etc.). It is specifically designed to support the Robot Framework and its Browser Library while requiring minimal changes to the original image.
 
+Additionally, the Robot Framework and the Browser Library are automatically updated to their latest versions every time the build runs for new `n8n` major versions.
+
 You can access its source code or contribute at this GitHub repository:  
 [GitHub Repository - Custom n8n Robot Framework Image](https://github.com/Delilovic/n8n-debian/tree/master/docker/images)
 
