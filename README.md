@@ -212,3 +212,6 @@ Note: If you prefer not to create a Telegram API token or account, you can simpl
   - Fixed error handling
   - Add default Robot Framework structure to node
   - Refactoring
+- **0.0.6**
+  - Updated the README file with the latest changes.
+  - Applied those changes to the npm website.
