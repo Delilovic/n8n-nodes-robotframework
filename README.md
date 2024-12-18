@@ -40,11 +40,12 @@ Open this URL in your browser to start using `n8n`. Next, follow the [Installing
 
 ### Detailed Instructions
 
-#### Using the Default `n8n` Docker Image
-The default Docker image for `n8n` is based on **Alpine Linux**. To set it up, you can refer to the official installation guide:  
-[Official n8n Docker Installation Guide](https://docs.n8n.io/hosting/installation/docker/).  
+#### Using the Default `n8n` Docker Image (Not Recommended)
+The default Docker image for `n8n` is based on **Alpine Linux**. To set it up, you can refer to the official installation guide: [Official n8n Docker Installation Guide](https://docs.n8n.io/hosting/installation/docker/).  
 
-#### Using the Custom `n8n_robotframework` Docker Image
+By default, the Alpine-based Docker image does not have Python and Robot Framework installed. However, it has been tested that once these dependencies are installed, the Robot Framework node is fully functional and ready for use.
+
+#### Using the Custom `n8n_robotframework` Docker Image (Recommended)
 If you are using the **Robot Framework Browser Library**, you'll need the custom image `n8n_robotframework`, based on **Debian Bullseye**, because the Browser Library (which uses Playwright) is not compatible with Alpine Linux.
 
 1. Replace the default image in your setup:
