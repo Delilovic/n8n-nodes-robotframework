@@ -43,7 +43,11 @@ Open this URL in your browser to start using `n8n`. Next, follow the [Installing
 #### Using the Default `n8n` Docker Image (Not Recommended)
 The default Docker image for `n8n` is based on **Alpine Linux**. To set it up, you can refer to the official installation guide: [Official n8n Docker Installation Guide](https://docs.n8n.io/hosting/installation/docker/).  
 
-By default, the Alpine-based Docker image does not have Python and Robot Framework installed. However, it has been tested that once these dependencies are installed, the Robot Framework node is fully functional and ready for use.
+### Dependency Installation Warning
+
+By default, the Alpine-based Docker image does not include Python and Robot Framework pre-installed. Users need to manually install these dependencies. It has been verified that after installing these dependencies, the Robot Framework node becomes fully functional and ready for use.
+
+Please ensure you have installed Python and Robot Framework inside the Docker container before proceeding.
 
 #### Using the Custom `n8n_robotframework` Docker Image (Recommended)
 If you are using the **Robot Framework Browser Library**, you'll need the custom image `n8n_robotframework`, based on **Debian Bullseye**, because the Browser Library (which uses Playwright) is not compatible with Alpine Linux.
@@ -214,5 +218,8 @@ Note: If you prefer not to create a Telegram API token or account, you can simpl
   - Add default Robot Framework structure to node
   - Refactoring
 - **0.0.6**
+  - Updated the README file with the latest changes.
+  - Applied those changes to the npm website.
+- **0.0.7**
   - Updated the README file with the latest changes.
   - Applied those changes to the npm website.
