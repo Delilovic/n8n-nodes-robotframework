@@ -125,16 +125,16 @@ Additionally, we will showcase how to export the Robot Framework's report files 
 ### Overview
 ![1_overview.png](screenshots/1_overview.png)
 
-The workflow shown in the image consists of four nodes: a trigger node, two Robot Framework nodes, and a Telegram node. The trigger node starts the workflow when the “Test workflow” button is clicked. The first Robot Framework node handles the login process, while the second validates that the login was successful. Finally, the Telegram node sends a notification confirming the successful login and provides the URL of the website.
+The workflow shown in the image consists of four nodes: a trigger node, two Robot Framework nodes, and a Telegram node. The trigger node starts the workflow when the **`Test workflow`** button is clicked. The first Robot Framework node handles the login process, while the second validates that the login was successful. Finally, the Telegram node sends a notification confirming the successful login and provides the URL of the website.
 
 ### Login Node Details
 ![2_login_node.png](screenshots/2_login_node.png)
 
-When we open the Login node, we see the Robot Framework script area, where the code for automating the login process is written. In this example, we have selected the Include Log HTML option to ensure an execution report (log.html) is generated after the script runs.
+When we open the Login node, we see the Robot Framework script area, where the code for automating the login process is written. In this example, we have selected the **`Include Log HTML`** option to ensure an execution report (log.html) is generated after the script runs.
 
 As the node has already been executed, the log.html file is now available for download on the Output panel, providing a detailed log of the execution.
 
-There is also an option to toggle Include Other Input Fields, which would pass variables from the previous node to the script. However, since the previous node is a trigger node without any relevant data to pass, this option has been left disabled.
+There is also an option to toggle **`Include Other Input Fields`**, which would pass variables from the previous node to the script. However, since the previous node is a trigger node without any relevant data to pass, this option has been left disabled.
 
 ![3_login_node_code.png](screenshots/3_login_node_code.png)
 
@@ -144,7 +144,7 @@ The Login Node contains classic Robot Framework code with its standard structure
 * Enter the username and password into the respective fields.
 * Click the login button to authenticate.
 
-Additionally, we save the current URL `${current_url}` and browser state `${state_file}` to maintain session continuity. This allows the Validate Login node to pick up exactly where the Login Node left off without requiring reauthentication.
+Additionally, we save the current URL `${current_url}` and browser state `${state_file}` to maintain session continuity. This allows the **`Validate Login`** node to pick up exactly where the **`Login`** Node left off without requiring reauthentication.
 
 A screenshot is also captured during the login process, which will be included in the log.html report file for easier debugging or verification.
 
@@ -160,37 +160,37 @@ Additionally, as defined in the code, the report includes the screenshot taken j
 
 ![5_validate_node.png](screenshots/5_validate_node.png)
 
-In the Validate Login node, the input panel on the left shows the variables and values passed from the previous Login node, including the browser context `state_file` and the URL `current_url`. These are essential for this step as they allow the node to continue the session established during the login process without requiring reauthentication.
+In the **`Validate Login`** node, the input panel on the left shows the variables and values passed from the previous **`Login`** node, including the browser context `state_file` and the URL `current_url`. These are essential for this step as they allow the node to continue the session established during the login process without requiring reauthentication.
 
-The Robot Framework script for validation is defined in the edit field, where it utilizes the passed browser context and URL to verify that the login was successful. We have enabled Log HTML generation to include a detailed execution report.
+The Robot Framework script for validation is defined in the edit field, where it utilizes the passed browser context and URL to verify that the login was successful. We have enabled **`Log HTML`** generation to include a detailed execution report.
 
-For demonstration purposes, the Include Other Input Fields option is enabled to show how this toggle can be used to forward all variables and values to the next node. This ensures that the Telegram node can access the `current_url` and include it in the notification message sent after the validation step.
+For demonstration purposes, the **`Include Other Input Fields`** option is enabled to show how this toggle can be used to forward all variables and values to the next node. This ensures that the Telegram node can access the `current_url` and include it in the notification message sent after the validation step.
 
 ![6_validate_node_code.png](screenshots/6_validate_node_code.png)
 
-In the Validate Login node, we use the Expression View, which allows us to dynamically reference JavaScript expressions and variables from the previous node. Instead of hardcoding values, we use variables like `{{ $json.current_url }}` and `{{ $json.state_file }}`. On the right, we can see how these expressions are evaluated since the node has already been executed and the variables and their values are now known to the editor.
+In the **`Validate Login`** node, we use the Expression View, which allows us to dynamically reference JavaScript expressions and variables from the previous node. Instead of hardcoding values, we use variables like `{{ $json.current_url }}` and `{{ $json.state_file }}`. On the right, we can see how these expressions are evaluated since the node has already been executed and the variables and their values are now known to the editor.
 
 This code reuses the browser context `state_file` from the previous node, enabling the browser to continue exactly where it left off. The code navigates to the saved URL and checks for the presence of a specific label ("Secure Area page for Automation Testing Practice") that is only visible after a successful login. To ensure accuracy and provide visual confirmation, the workflow also captures a screenshot, which will appear in the log.html file.
 
 By combining variables from the previous node and runtime evaluations, this approach makes the workflow more flexible and adaptable to different inputs and scenarios.
 
-![6_validate_node_code.png](screenshots/6_validate_node_code.png)
+![7_validate_node_report.png](screenshots/7_validate_node_report.png)
 
-The log.html report generated from the Validate Login node confirms the successful execution of the validation step. The captured screenshot is included, showing the Secure Area page for Automation Testing Practice, which verifies that the login was successful.
+The log.html report generated from the **`Validate Login`** node confirms the successful execution of the validation step. The captured screenshot is included, showing the Secure Area page for Automation Testing Practice, which verifies that the login was successful.
 
 ### Telegram Node Integration
 
 ![8_telegram_node.png](screenshots/8_telegram_node.png)
 
-Finally, the Telegram node demonstrates how seamlessly Robot Framework can integrate with other n8n nodes, such as AWS, OpenAI, Airtable, and many more.
+Finally, the **`Telegram`** node demonstrates how seamlessly Robot Framework can integrate with other n8n nodes, such as AWS, OpenAI, Airtable, and many more.
 
-In this example, the URL passed from the Validate Login node is dynamically inserted into the Telegram message using an expression `{{ $json.URL }}`. The message is then sent to a Telegram channel along with the text: “Login was successful!”.
+In this example, the URL passed from the **`Validate Login`** node is dynamically inserted into the Telegram message using an expression `{{ $json.URL }}`. The message is then sent to a Telegram channel along with the text: “Login was successful!”.
 
 This setup highlights how easily you can combine Robot Framework automation with powerful integrations in n8n to create end-to-end workflows that involve notifications, external APIs, and more. The output panel confirms the successful delivery of the message to the Telegram channel, completing the workflow.
 
 ### Importing This Example into Your n8n Instance  
 
-You can easily import this example into your n8n instance by following these steps:  
+You can import this example into your n8n instance by following these steps:  
 
 1. Create an empty workflow in your n8n instance.  
 2. Open the workflow editor and click on the three dots `...` at the top right.  
@@ -199,7 +199,7 @@ You can easily import this example into your n8n instance by following these ste
 
 This will load the entire example workflow into your instance, allowing you to explore and customize it as needed.  
 
-Note: If you prefer not to create a Telegram API token or account, you can simply remove the Telegram node. Everything else will function as expected.
+Note: If you prefer not to create a Telegram API token or account, you can simply remove the **`Telegram`** node. Everything else will function as expected.
 
 ## Version history
 
@@ -218,6 +218,6 @@ Note: If you prefer not to create a Telegram API token or account, you can simpl
   - Fixed error handling
   - Add default Robot Framework structure to node
   - Refactoring
-- **0.0.6 - 0.0.8**
+- **0.0.6 - 0.0.9**
     - Updated the README file with the latest changes.
     - Applied those changes to the npm website.
