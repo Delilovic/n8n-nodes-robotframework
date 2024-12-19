@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-robotframework",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "An n8n custom node that executes Robot Framework scripts, allowing users to automate testing and workflow tasks within n8n",
   "keywords": [
     "n8n-community-node-package",
