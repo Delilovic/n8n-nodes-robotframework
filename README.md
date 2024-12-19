@@ -105,7 +105,7 @@ After setting up **n8n** (via either Quick Start or Detailed Instructions), foll
 
 ---
 
-### About the Custom `n8n_robotframework` Image
+### About the Custom n8n_robotframework Image
 
 The custom Docker image, **n8n_robotframework**, is regularly updated alongside major versions of **n8n** (e.g., 1.72.0, 1.73.0, etc.). It is specifically designed to support the Robot Framework and its Browser Library while requiring minimal changes to the original image.
 
@@ -218,6 +218,6 @@ Note: If you prefer not to create a Telegram API token or account, you can simpl
   - Fixed error handling
   - Add default Robot Framework structure to node
   - Refactoring
-- **0.0.6 - 0.0.10**
+- **0.0.6 - 0.0.11**
     - Updated the README file with the latest changes.
     - Applied those changes to the npm website.
