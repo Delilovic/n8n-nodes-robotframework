@@ -41,16 +41,17 @@ Open this URL in your browser to start using `n8n`. Next, follow the [Installing
 ### Detailed Instructions
 
 #### Using the Default `n8n` Docker Image (Not Recommended)
-The default Docker image for `n8n` is based on **Alpine Linux**. To set it up, you can refer to the official installation guide: [Official n8n Docker Installation Guide](https://docs.n8n.io/hosting/installation/docker/).  
 
-### Dependency Installation Warning
+The default Docker image for `n8n` is based on **Alpine Linux**. To set it up, you can refer to the official installation guide: [Official n8n Docker Installation Guide](https://docs.n8n.io/hosting/installation/docker/).
 
 By default, the Alpine-based Docker image does not include Python and Robot Framework pre-installed. Users need to manually install these dependencies. It has been verified that after installing these dependencies, the Robot Framework node becomes fully functional and ready for use.
 
-Please ensure you have installed Python and Robot Framework inside the Docker container before proceeding.
+Please ensure Python and Robot Framework are installed inside the Docker container before proceeding.
 
 #### Using the Custom `n8n_robotframework` Docker Image (Recommended)
-If you are using the **Robot Framework Browser Library**, you'll need the custom image `n8n_robotframework`, based on **Debian Bullseye**, because the Browser Library (which uses Playwright) is not compatible with Alpine Linux.
+
+If you are using the **Robot Framework Browser Library**, you’ll need the custom Docker image `n8n_robotframework`, which is based on **Debian Bullseye**. This custom image includes pre-installed dependencies, such as Python, Robot Framework, and the Browser Library.
+This setup ensures that the Robot Framework community node works out of the box.
 
 1. Replace the default image in your setup:
    ```bash
@@ -217,9 +218,6 @@ Note: If you prefer not to create a Telegram API token or account, you can simpl
   - Fixed error handling
   - Add default Robot Framework structure to node
   - Refactoring
-- **0.0.6**
-  - Updated the README file with the latest changes.
-  - Applied those changes to the npm website.
-- **0.0.7**
-  - Updated the README file with the latest changes.
-  - Applied those changes to the npm website.
+- **0.0.6 - 0.0.8**
+    - Updated the README file with the latest changes.
+    - Applied those changes to the npm website.
