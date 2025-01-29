@@ -165,11 +165,11 @@ export class RobotFramework implements INodeType {
 			return transformed;
 		};
 
-		const prepareExecutionPaths = (): { logPath: string; robotFilePath: string } => {
+		const prepareExecutionPaths = (itemIndex: number): { logPath: string; robotFilePath: string } => {
 			const homeDir = os.homedir();
 			const executionId = this.getExecutionId();
 			const nodeName = this.getNode().name.replace(/\s+/g, '_');
-			const logPath = path.join(homeDir, 'n8n_robot_logs', executionId, nodeName);
+			const logPath = path.join(homeDir, 'n8n_robot_logs', executionId, nodeName, `run_${itemIndex + 1}`);
 			if (!fs.existsSync(logPath)) {
 				fs.mkdirSync(logPath, { recursive: true });
 			}
@@ -227,7 +227,7 @@ export class RobotFramework implements INodeType {
 			const includeReportHtml = this.getNodeParameter('includeReportHtml', itemIndex, false) as boolean;
 			const includeOtherFields = this.getNodeParameter('includeOtherFields', itemIndex, false) as boolean;
 
-			const { logPath, robotFilePath } = prepareExecutionPaths();
+			const { logPath, robotFilePath } = prepareExecutionPaths(itemIndex);
 			fs.writeFileSync(robotFilePath, robotScript);
 
 			const { terminalOutput, errorOccurred } = await runRobotTests(logPath, robotFilePath);

@@ -219,5 +219,7 @@ Note: If you prefer not to create a Telegram API token or account, you can simpl
   - Add default Robot Framework structure to node
   - Refactoring
 - **0.0.6 - 0.0.11**
-    - Updated the README file with the latest changes.
-    - Applied those changes to the npm website.
+  - Updated the README file with the latest changes.
+  - Applied those changes to the npm website.
+- **0.0.12**
+  - Ensured that when the Robot Framework node runs multiple times within the same execution, each run gets its own dedicated folder.
