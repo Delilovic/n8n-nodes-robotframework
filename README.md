@@ -223,3 +223,5 @@ Note: If you prefer not to create a Telegram API token or account, you can simpl
   - Applied those changes to the npm website.
 - **0.0.12**
   - Ensured that when the Robot Framework node runs multiple times within the same execution, each run gets its own dedicated folder.
+- **0.0.13**
+  - Applied those changes to the npm website.
