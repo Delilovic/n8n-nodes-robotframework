@@ -41,7 +41,7 @@ export class RobotFramework implements INodeType {
 				name: 'includeOutputJson',
 				type: 'boolean',
 				default: false,
-				description: 'Whether to include the output.json file as an attachment',
+				description: 'Whether to include the output.JSON file as an attachment',
 			},
 			{
 				displayName: 'Include Log HTML',
