@@ -225,3 +225,8 @@ Note: If you prefer not to create a Telegram API token or account, you can simpl
   - Ensured that when the Robot Framework node runs multiple times within the same execution, each run gets its own dedicated folder.
 - **0.0.13**
   - Applied those changes to the npm website.
+- **0.0.14** Update Robot Framework output parsing for v7.0+ and remove XML-to-JSON conversion:
+  - Updated output parsing to use `outputJson.suite.tests` instead of `outputJson.tests`,  
+    fixing compatibility with Robot Framework 7.0+ where test cases are now nested inside `suite`.  
+  - Removed the `rebot` XML-to-JSON conversion step, leveraging Robot Framework 7.2’s native JSON output support.  
+  - Improved variable extraction logic to align with the new JSON structure.
