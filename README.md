@@ -229,3 +229,4 @@ Note: If you prefer not to create a Telegram API token or account, you can simpl
   - Removed the `rebot` XML-to-JSON conversion step, leveraging Robot Framework 7.2’s native JSON output support.  
   - Improved variable extraction logic to align with the new JSON structure.
 - **0.0.15** - Fix JSON linting issues in RobotFramework node.
+- **0.0.16** - Add support for dynamic variable handling and improve error reporting for failed test cases.

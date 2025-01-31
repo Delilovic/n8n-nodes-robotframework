@@ -4,6 +4,7 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
+import { LoggerProxy } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -90,68 +91,32 @@ export class RobotFramework implements INodeType {
 		};
 
 		const extractVariables = (outputJson: any): Record<string, string> => {
-			const exclusionList = [
-				"${/}", "${:}", "${\\n}", "${DEBUG_FILE}", "${EXECDIR}", "${False}",
-				"${LOG_FILE}", "${LOG_LEVEL}", "${None}", "${null}", "&{OPTIONS}",
-				"${OUTPUT_DIR}", "${OUTPUT_FILE}", "${PREV_TEST_MESSAGE}", "${PREV_TEST_NAME}",
-				"${PREV_TEST_STATUS}", "${REPORT_FILE}", "${SPACE}",
-				"${SUITE_DOCUMENTATION}", "&{SUITE_METADATA}", "${SUITE_NAME}", "${SUITE_SOURCE}",
-				"${TEMPDIR}", "${True}"
-			];
-
 			const variables: Record<string, string> = {};
 
-			function escapeRegExp(string: string): string {
-				return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-			}
+			const tests = outputJson?.suite?.tests || [];
+			const entries: any[] = tests.flatMap((test: any) => test.body || []);
 
-			// Recursive function to process nested bodies
-			function processBody(body: any[]) {
-				for (const step of body) {
-					if (step.assign && step.body) {
-						for (const assignedVar of step.assign) {
-							const message = step.body.find(
-								(entry: any) =>
-									entry.type === "MESSAGE" &&
-									new RegExp(`^${escapeRegExp(assignedVar)}\\s*=`).test(entry.message)
-							);
-							if (message) {
-								const value = message.message.split(" = ")[1].trim();
-								variables[assignedVar] = value;
-							}
-						}
-					}
+			entries.forEach((entry: any) => {
+				if (
+					entry.name === 'Log' &&
+					entry.owner === 'BuiltIn' &&
+					Array.isArray(entry.body) &&
+					Array.isArray(entry.args)
+				) {
+					const variableNameMatch = entry.args[0]?.match(/^\$\{(.*?)\}$/);
+					if (variableNameMatch) {
+						const variableName = variableNameMatch[1].trim();
 
-					// Recursively process nested bodies
-					if (step.body) {
-						processBody(step.body);
-					}
-				}
-			}
+						const messageEntry = entry.body.find(
+							(item: any) => item.type === 'MESSAGE' && item.level === 'INFO',
+						);
 
-			// Process the tests
-			if (outputJson.suite.tests) {
-				for (const test of outputJson.suite.tests) {
-					if (test.body) {
-						processBody(test.body);
-					}
-				}
-			}
-
-			// Process the setup section
-			if (outputJson.suite.setup && outputJson.suite.setup.name === "Log Variables") {
-				const logMessages = outputJson.suite.setup.body.filter((entry: any) => entry.type === "MESSAGE");
-				for (const message of logMessages) {
-					const match = message.message.match(/^\$\{.*?\}\s*=\s*(.*)$/);
-					if (match) {
-						const variableName = message.message.split(" = ")[0].trim();
-						const variableValue = match[1];
-						if (!exclusionList.includes(variableName)) {
-							variables[variableName] = variableValue;
+						if (messageEntry && messageEntry.message) {
+							variables[variableName] = messageEntry.message.trim();
 						}
 					}
 				}
-			}
+			});
 
 			return variables;
 		};
@@ -207,11 +172,12 @@ export class RobotFramework implements INodeType {
 			return attachments;
 		};
 
+        LoggerProxy.debug('Entry Point');
 		const items = this.getInputData();
 		const results: INodeExecutionData[] = [];
 
 		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
-			const robotScript = `*** Settings ***\nSuite Setup    Log Variables\n\n${this.getNodeParameter('robotScript', itemIndex, '') as string}`;
+			const robotScript = `*** Settings ***\n\n${this.getNodeParameter('robotScript', itemIndex, '') as string}`;
 			const includeOutputJson = this.getNodeParameter('includeOutputJson', itemIndex, false) as boolean;
 			const includeLogHtml = this.getNodeParameter('includeLogHtml', itemIndex, false) as boolean;
 			const includeReportHtml = this.getNodeParameter('includeReportHtml', itemIndex, false) as boolean;
@@ -221,7 +187,7 @@ export class RobotFramework implements INodeType {
 			fs.writeFileSync(robotFilePath, robotScript);
 
 			const { terminalOutput, errorOccurred } = await runRobotTests(logPath, robotFilePath);
-		    const outputJsonPath = path.join(logPath, 'output.json');
+			const outputJsonPath = path.join(logPath, 'output.json');
 			if (!fs.existsSync(outputJsonPath)) {
 				throw new NodeOperationError(this.getNode(), terminalOutput);
 			}
