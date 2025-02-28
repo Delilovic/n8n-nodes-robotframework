@@ -125,7 +125,7 @@ Additionally, we will showcase how to export the Robot Framework's report files 
 ### Overview
 ![1_overview.png](screenshots/1_overview.png)
 
-The workflow shown in the image consists of four nodes: a trigger node, two Robot Framework nodes, and a Telegram node. The trigger node starts the workflow when the **Test workflow** button is clicked. The first Robot Framework node handles the login process, while the second validates that the login was successful. Finally, the Telegram node sends a notification confirming the successful login and provides the URL of the website.
+The workflow shown in the image consists of five nodes: a trigger node, two Robot Framework nodes, a file reader node, and a Telegram node. The trigger node starts the workflow when the **Test workflow** button is clicked. The first Robot Framework node handles the login process, while the second validates that the login was successful and captures a screenshot. The file reader node then reads the screenshot from the disk and passes it as a binary file to the Telegram node. Finally, the Telegram node sends the screenshot with the caption "Login was successful."
 
 ### Login Node Details
 ![2_login_node.png](screenshots/2_login_node.png)
@@ -139,16 +139,25 @@ There is also an option to toggle **Include Other Input Fields**, which would pa
 ![3_login_node_code.png](screenshots/3_login_node_code.png)
 
 The Login Node contains classic Robot Framework code with its standard structure, which includes Settings, Variables, and Tasks (with support for Keywords and Tests as well). In this example, the Browser Library is used to perform the following actions:
-* Open a new browser instance and context.
-* Navigate to the login page using the URL defined in the variables section.
-* Enter the username and password into the respective fields.
-* Click the login button to authenticate.
+* **Failure Handling:** The task begins by registering `Take Screenshot` (with the `EMBED` argument) as the failure handler using `Register Keyword To Run On Failure`. This ensures that a screenshot is automatically captured and embedded into the log in case any step during the execution fails. This is particularly useful for debugging issues in automated workflows.
+* Open a new browser instance in headless mode with a registered `userAgent`.
+* Navigate to the login page using the `${URL}` defined in the variables section.
+* Wait for the cookie consent modal (`div.fc-consent-root`) to be hidden before proceeding.
+* Enter the username (`${USERNAME}`) and password (`${PASSWORD}`) into their respective input fields.
+* Capture a full-page screenshot during the login process, embedded directly into the log for easier debugging or verification.
+* Click on the login button to authenticate.
+* Save the current URL (`${current_url}`) and browser state (`${state_file}`) to maintain session continuity across nodes.
+* Close the browser instance once the actions are complete.
+* Log both the current URL and the saved browser state for reuse in subsequent nodes.
 
-Additionally, we save the current URL `${current_url}` and browser state `${state_file}` to maintain session continuity. This allows the **Validate Login** node to pick up exactly where the **Login** Node left off without requiring reauthentication.
+### Key Notes:
+- **Failure Handling**: The `Register Keyword To Run On Failure` ensures screenshots (`Take Screenshot`) are automatically captured and embedded into the logs if any failure occurs during execution. This is done by passing the `EMBED` argument, making the logs more informative and accessible directly from the report.
+- **Session Continuity:** The use of `${state_file}` ensures session continuity. This allows the **Validate Login** node to resume exactly where the **Login** node left off, avoiding the need for reauthentication.
+- **User-Agent Configuration:** A custom `userAgent` is passed via `New Context`, simulating a specific browser environment (`Mozilla/5.0...Chrome/124.0...Safari/537.36`), which is helpful for compatibility testing.
 
-A screenshot is also captured during the login process, which will be included in the log.html report file for easier debugging or verification.
+Variables in the Robot Framework node are no longer automatically forwarded between nodes. Instead, variables must explicitly be passed to subsequent nodes using the `Log` keyword (e.g., `Log ${foo}`). This approach ensures that only the intended variables are available to downstream nodes, improving efficiency and clarity within workflows.
 
-All variables defined in the Variables section and initialized in the Tasks section are automatically forwarded to the next node. Along with the Robot Framework’s standard test result output, this allows flexibility to reuse values, such as the session state and current URL, in subsequent nodes.
+Additionally, the Robot Framework's standard output is automatically included, providing the framework's typical execution status and result details.
 
 ![4_login_node_report.png](screenshots/4_login_node_report.png)
 
@@ -160,23 +169,27 @@ Additionally, as defined in the code, the report includes the screenshot taken j
 
 ![5_validate_node.png](screenshots/5_validate_node.png)
 
-In the **Validate Login** node, the input panel on the left shows the variables and values passed from the previous **Login** node, including the browser context `state_file` and the URL `current_url`. These are essential for this step as they allow the node to continue the session established during the login process without requiring reauthentication.
+In the **Validate Login** node, the input panel on the left displays the variables and values passed from the preceding **Login** node, which uses the `Log` keyword to pass the browser context `state_file` and the URL `current_url` to the **Validate Login** node. These variables are essential for this step as they enable the node to continue the session established during the login process without requiring reauthentication.
 
-The Robot Framework script for validation is defined in the edit field, where it utilizes the passed browser context and URL to verify that the login was successful. We have enabled **Log HTML** generation to include a detailed execution report.
+The Robot Framework script for validation is defined in the edit field, utilizing the passed browser context and URL to verify the success of the login operation. We have enabled **Log HTML** generation to provide a comprehensive execution report for this step.
 
-For demonstration purposes, the **Include Other Input Fields** option is enabled to show how this toggle can be used to forward all variables and values to the next node. This ensures that the Telegram node can access the `current_url` and include it in the notification message sent after the validation step.
+For demonstration purposes, the **Include Other Input Fields** toggle is enabled to pass all output variables from the **Validate Login** node to the next **Read Screenshot from Disk** node. In cases where duplicate variables with the same name exist, such as `terminal_output`, the variable generated in the **current Validate Login** node takes precedence over the one received from the **Login** node. However, these additional variables will not be used in the subsequent **Read Screenshot from Disk** node.
 
 ![6_validate_node_code.png](screenshots/6_validate_node_code.png)
 
-In the **Validate Login** node, we use the Expression View, which allows us to dynamically reference JavaScript expressions and variables from the previous node. Instead of hardcoding values, we use variables like `{{ $json.current_url }}` and `{{ $json.state_file }}`. On the right, we can see how these expressions are evaluated since the node has already been executed and the variables and their values are now known to the editor.
+In the **Validate Login** node, we use the **Expression View**, which allows us to dynamically reference JavaScript expressions and variables from the previous node. Instead of hardcoding values, we utilize variables such as `{{ $json.current_url }}` and `{{ $json.state_file }}`. On the right side, we can see how these expressions are evaluated after the node is executed, as the variables and their values are now known to the editor.
 
-This code reuses the browser context `state_file` from the previous node, enabling the browser to continue exactly where it left off. The code navigates to the saved URL and checks for the presence of a specific label ("Secure Area page for Automation Testing Practice") that is only visible after a successful login. To ensure accuracy and provide visual confirmation, the workflow also captures a screenshot, which will appear in the log.html file.
+This implementation reuses the browser context `state_file` from the previous node, enabling the browser to resume exactly where it left off. The workflow navigates to the saved URL and verifies the presence of a specific label ("Secure Area page for Automation Testing Practice") that appears only after a successful login. Additionally, the workflow captures a screenshot, which is sent via Telegram. The screenshot's file path is passed to the next node using the `Log` keyword.
 
-By combining variables from the previous node and runtime evaluations, this approach makes the workflow more flexible and adaptable to different inputs and scenarios.
+By combining the use of variables from the previous node with runtime evaluations, this approach enhances the workflow's flexibility and adaptability to various inputs and scenarios.
 
 ![7_validate_node_report.png](screenshots/7_validate_node_report.png)
 
-The log.html report generated from the **Validate Login** node confirms the successful execution of the validation step. The captured screenshot is included, showing the Secure Area page for Automation Testing Practice, which verifies that the login was successful.
+The log.html report generated from the **Validate Login** node confirms the successful execution of the validation step. Instead of embedding the captured screenshot, its file path is provided, allowing us to use it for further processing.
+
+### Read Screenshot from Disk
+
+This node converts the screenshot stored on the disk to a n8n binary file, which can then be used in the Telegram node to send it as an image.
 
 ### Telegram Node Integration
 
@@ -184,9 +197,9 @@ The log.html report generated from the **Validate Login** node confirms the succ
 
 Finally, the **Telegram** node demonstrates how seamlessly Robot Framework can integrate with other n8n nodes, such as AWS, OpenAI, Airtable, and many more.
 
-In this example, the URL passed from the **Validate Login** node is dynamically inserted into the Telegram message using an expression `{{ $json.URL }}`. The message is then sent to a Telegram channel along with the text: “Login was successful!”.
+In this example, the screenshot binary, which was read from disk in the previous node, is dynamically used in the **Telegram** node. The binary data is sent as a photo attachment, along with a caption reading: “Login was successful!”.
 
-This setup highlights how easily you can combine Robot Framework automation with powerful integrations in n8n to create end-to-end workflows that involve notifications, external APIs, and more. The output panel confirms the successful delivery of the message to the Telegram channel, completing the workflow.
+This setup highlights how easily you can combine Robot Framework automation with powerful integrations in n8n to create end-to-end workflows. By leveraging the ability to process files, interact with external APIs, and send notifications, n8n provides a seamless way to share updates across channels. The output panel confirms the successful delivery of the photo and caption to the Telegram channel, completing the workflow.
 
 ### Importing This Example into Your n8n Instance  
 
@@ -230,3 +243,4 @@ Note: If you prefer not to create a Telegram API token or account, you can simpl
   - Improved variable extraction logic to align with the new JSON structure.
 - **0.0.15** - Fix JSON linting issues in RobotFramework node.
 - **0.0.16** - Add support for dynamic variable handling and improve error reporting for failed test cases.
+- **0.0.17** - Added the Log feature to pass variables to the next node, and removed the automatic passing of variables to align with a more explicit workflow design. The example in this readme file has been adapted to reflect this change.

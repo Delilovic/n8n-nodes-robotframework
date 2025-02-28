@@ -6,7 +6,7 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        0,
+        -20,
         0
       ],
       "id": "376d5b6f-420d-4670-9fb0-d32a21bc446d",
@@ -14,13 +14,13 @@
     },
     {
       "parameters": {
-        "robotScript": "*** Settings ***\nLibrary    Browser\n\n*** Variables ***\n${URL}             https://practice.expandtesting.com/login\n${USERNAME}        practice\n${PASSWORD}        SuperSecretPassword!\n\n*** Tasks ***\nLogin\n    New Browser\n    New Context\n    New Page    ${URL}\n    Wait For Elements State    css=div.fc-consent-root    hidden    timeout=5s\n    Type Text    id=username    ${USERNAME}\n    Type Secret    id=password    $PASSWORD\n    Take Screenshot    EMBED    fullPage=True\n    Click    xpath=//button[@type=\"submit\" and contains(text(), \"Login\")]\n    ${current_url} =    Get Url\n    ${state_file} =    Save Storage State\n    Close Browser",
+        "robotScript": "*** Settings ***\nLibrary    Browser\n\n*** Variables ***\n${USER_AGENT}    Mozilla/5.0 (X11; Debian; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6330.194 Safari/537.36\n${URL}             https://practice.expandtesting.com/login\n${USERNAME}        practice\n${PASSWORD}        SuperSecretPassword!\n\n*** Tasks ***\nLogin\n    Register Keyword To Run On Failure    Take Screenshot    EMBED\n    New Browser    headless=True\n    New Context    userAgent=${USER_AGENT}\n    New Page    ${URL}\n    Wait For Elements State    css=div.fc-consent-root    hidden    timeout=5s\n    Type Text    id=username    ${USERNAME}\n    Type Secret    id=password    $PASSWORD\n    Take Screenshot    EMBED    fullPage=True\n    Click    xpath=//button[@type=\"submit\" and contains(text(), \"Login\")]\n    ${current_url} =    Get Url\n    ${state_file} =    Save Storage State\n    Close Browser\n    Log    ${current_url}\n    Log    ${state_file}",
         "includeLogHtml": true
       },
       "type": "n8n-nodes-robotframework.robotFramework",
       "typeVersion": 1,
       "position": [
-        220,
+        260,
         0
       ],
       "id": "9295bb64-47d1-48be-b397-1b3f49d2836c",
@@ -28,14 +28,13 @@
     },
     {
       "parameters": {
-        "robotScript": "=*** Settings ***\nLibrary    Browser\n\n*** Variables ***\n${URL}    {{ $json.current_url }}        \n\n*** Tasks ***\nValidate Login\n    New Browser\n    New context    storageState={{ $json.state_file }}\n    New Page    ${URL}\n    Get Text    xpath=//h1[text()=\"Secure Area page for Automation Testing Practice\"]\n    Take Screenshot    EMBED    fullPage=True   \n    Close Browser",
-        "includeLogHtml": true,
-        "includeOtherFields": true
+        "robotScript": "=*** Settings ***\nLibrary    Browser\n\n*** Variables ***\n${URL}    {{ $json.current_url }}\n\n*** Tasks ***\nValidate Login\n    Register Keyword To Run On Failure    Take Screenshot    EMBED\n    New Browser    headless=True\n    New context    storageState={{ $json.state_file }}\n    New Page    ${URL}\n    Get Text    xpath=//h1[text()=\"Secure Area page for Automation Testing Practice\"]\n    ${screenshot_path}=    Take Screenshot    return_as=path_string    fullPage=True\n    Close Browser\n    Log    ${screenshot_path}",
+        "includeLogHtml": true
       },
       "type": "n8n-nodes-robotframework.robotFramework",
       "typeVersion": 1,
       "position": [
-        440,
+        540,
         0
       ],
       "id": "73460ec3-74d3-4252-b3c9-c844969e9254",
@@ -43,12 +42,29 @@
     },
     {
       "parameters": {
-        "chatId": "-1002192658598",
-        "text": "={{ $json.URL }}\n\nLogin was successful!",
+        "fileSelector": "={{ $json.screenshot_path }}",
+        "options": {
+          "fileName": "screenshot.png",
+          "dataPropertyName": "screenshot"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        820,
+        0
+      ],
+      "id": "178677a8-1fc9-4ca5-8320-690eb371ff6f",
+      "name": "Read Screenshot from Disk"
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "binaryData": true,
+        "binaryPropertyName": "=screenshot",
         "additionalFields": {
-          "appendAttribution": false,
+          "caption": "Login was successful",
           "disable_notification": false,
-          "disable_web_page_preview": false,
           "parse_mode": "HTML"
         }
       },
@@ -57,16 +73,17 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        680,
+        1100,
         0
       ],
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 5000,
+      "webhookId": "db5a232c-0d9b-4de3-9fe4-5ebc320c3d91",
       "credentials": {
         "telegramApi": {
-          "id": "2t6jk5nmdJs930T0",
-          "name": "Telegram account"
+          "id": "MRGwXzr67YjhIprz",
+          "name": "Foo"
         }
       }
     }
@@ -99,11 +116,27 @@
       "main": [
         [
           {
+            "node": "Read Screenshot from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Screenshot from Disk": {
+      "main": [
+        [
+          {
             "node": "Post",
             "type": "main",
             "index": 0
           }
         ]
+      ]
+    },
+    "Post": {
+      "main": [
+        []
       ]
     }
   },
@@ -111,8 +144,9 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "e9a088ea-ca6b-433a-b905-8a54666bb9ac",
+  "versionId": "757b891e-5763-41cd-9fb9-5b7dcc7f289d",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "a1c3fb268ebdab1bf47bcbd1467543a133eb02499a51fc502defa2c8957447ba"
   },
   "id": "Nuo3lvIklRUH0dyU",
@@ -122,6 +156,12 @@
       "updatedAt": "2024-12-12T22:21:03.178Z",
       "id": "gfwMcOmJ6mSNn5cV",
       "name": "Misc"
+    },
+    {
+      "createdAt": "2025-01-31T15:10:12.510Z",
+      "updatedAt": "2025-01-31T15:10:12.510Z",
+      "id": "sdcUqSATlDOzqv3Q",
+      "name": "Robot Framework"
     }
   ]
 }

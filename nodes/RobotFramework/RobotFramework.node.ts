@@ -220,7 +220,6 @@ export class RobotFramework implements INodeType {
 
 			results.push(outputItem);
 		}
-
 		return [results];
 	}
 }
