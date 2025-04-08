@@ -98,7 +98,7 @@ export class RobotFramework implements INodeType {
 
 			entries.forEach((entry: any) => {
 				if (
-					entry.name === 'Log' &&
+					(entry.name === 'Log' || entry.name === 'Log To Console') &&
 					entry.owner === 'BuiltIn' &&
 					Array.isArray(entry.body) &&
 					Array.isArray(entry.args)

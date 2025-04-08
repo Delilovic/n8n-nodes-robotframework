@@ -244,3 +244,4 @@ Note: If you prefer not to create a Telegram API token or account, you can simpl
 - **0.0.15** - Fix JSON linting issues in RobotFramework node.
 - **0.0.16** - Add support for dynamic variable handling and improve error reporting for failed test cases.
 - **0.0.17** - Added the Log feature to pass variables to the next node, and removed the automatic passing of variables to align with a more explicit workflow design. The example in this readme file has been adapted to reflect this change.
+- **0.0.18** - Added a new feature where, alongside the keyword `Log`, it is now possible to pass variables to the next node using the Robot Framework keyword `Log To Console`. This provides an additional, flexible mechanism for variable handling between nodes in workflows.
